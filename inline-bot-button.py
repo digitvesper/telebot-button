@@ -1,3 +1,5 @@
+# бот с инлайн меню
+
 import telebot
 from telebot import types
 

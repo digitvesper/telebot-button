@@ -1,4 +1,5 @@
-#до конца не работает
+#работает
+
 
 import telebot
 from telebot import types
@@ -18,51 +19,63 @@ restaurants = {
 orders_queue = []
 waiting_time = 0
 
+def main_menu_markup():
+    markup = types.ReplyKeyboardMarkup(row_width=2)
+    buttons = [types.KeyboardButton(text) for text in ['Блюда', 'Рестораны', 'Заказы', 'Настройки']]
+    markup.add(*buttons)
+    return markup
 
 @bot.message_handler(commands=['start'])
 def handle_start(message):
+    bot.send_message(message.chat.id, "Выберите действие:", reply_markup=main_menu_markup())
+
+@bot.message_handler(func=lambda message: message.text == 'Главное меню')
+def handle_main_menu(message):
+    bot.send_message(message.chat.id, "Возвращаемся в главное меню:", reply_markup=main_menu_markup())
+
+@bot.message_handler(func=lambda message: message.text == 'Рестораны')
+def handle_restaurants(message):
+    markup = types.ReplyKeyboardMarkup(row_width=1)
+    markup.add(types.KeyboardButton('Главное меню'))
+    bot.send_message(message.chat.id, "Список ресторанов:", reply_markup=markup)
+    for restaurant in restaurants:
+        bot.send_message(message.chat.id, restaurant, reply_markup=markup)
+
+@bot.message_handler(func=lambda message: message.text == 'Блюда')
+def handle_dishes(message):
     markup = types.ReplyKeyboardMarkup(row_width=2)
-    item_btn1 = types.KeyboardButton('Блюда')
-    item_btn2 = types.KeyboardButton('Рестораны')
-    item_btn3 = types.KeyboardButton('Заказы')
-    item_btn4 = types.KeyboardButton('Настройки')
-    markup.add(item_btn1, item_btn2, item_btn3, item_btn4)
-    bot.send_message(message.chat.id, "Выберите действие:", reply_markup=markup)
-
-
-@bot.message_handler(func=lambda message: True)
-def handle_buttons(message):
-    if message.text == 'Рестораны':
-        bot.send_message(message.chat.id, "Список ресторанов:")
-        for restaurant in restaurants:
-            bot.send_message(message.chat.id, restaurant)
-    elif message.text == 'Блюда':
-        markup = types.ReplyKeyboardMarkup(row_width=2)
-        for restaurant in restaurants:
-            item_btn = types.KeyboardButton(restaurant)
-            markup.add(item_btn)
-        bot.send_message(message.chat.id, "Выберите ресторан:", reply_markup=markup)
-    elif message.text == 'Заказы':
-        if orders_queue:
-            bot.send_message(message.chat.id, "Очередь заказов:")
-            for order in orders_queue:
-                bot.send_message(message.chat.id, order)
-            bot.send_message(message.chat.id, f"Время ожидания: {waiting_time} мин")
-        else:
-            bot.send_message(message.chat.id, "Очередь заказов пуста")
-    elif message.text == 'Настройки':
-        bot.send_message(message.chat.id, "Настройки пока недоступны")
-    elif message.text == 'Ресторан 1':
-        bot.send_message(message.chat.id, "Меню ресторана")
+    for restaurant in restaurants:
+        item_btn = types.KeyboardButton(restaurant)
+        markup.add(item_btn)
+    markup.add(types.KeyboardButton('Главное меню'))
+    bot.send_message(message.chat.id, "Выберите ресторан:", reply_markup=markup)
 
 @bot.message_handler(func=lambda message: message.text in restaurants.keys())
 def handle_menu(message):
+    markup = types.ReplyKeyboardMarkup(row_width=1)
+    markup.add(types.KeyboardButton('Главное меню'))
     restaurant = message.text
     menu = restaurants.get(restaurant)
-    print(menu)
-    bot.send_message(message.chat.id, f"Меню ресторана {restaurant}:")
-    for item in menu:
-        bot.send_message(message.chat.id, item)
+    menu_text = f"Меню ресторана {restaurant}:\n" + '\n'.join(menu)
+    bot.send_message(message.chat.id, menu_text, reply_markup=markup)
+
+@bot.message_handler(func=lambda message: message.text == 'Заказы')
+def handle_orders(message):
+    markup = types.ReplyKeyboardMarkup(row_width=1)
+    markup.add(types.KeyboardButton('Главное меню'))
+    if orders_queue:
+        bot.send_message(message.chat.id, "Очередь заказов:")
+        for order in orders_queue:
+            bot.send_message(message.chat.id, order, reply_markup=markup)
+        bot.send_message(message.chat.id, f"Время ожидания: {waiting_time} мин", reply_markup=markup)
+    else:
+        bot.send_message(message.chat.id, "Очередь заказов пуста", reply_markup=markup)
+
+@bot.message_handler(func=lambda message: message.text == 'Настройки')
+def handle_settings(message):
+    markup = types.ReplyKeyboardMarkup(row_width=1)
+    markup.add(types.KeyboardButton('Главное меню'))
+    bot.send_message(message.chat.id, "Настройки пока недоступны", reply_markup=markup)
 
 
 bot.polling()

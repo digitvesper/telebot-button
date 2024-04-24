@@ -17,11 +17,12 @@ restaurants = {
 restaurant_details = {"Описание", "Отзывы", "Рейтинг", "Блюда", "Галерея" }
 choose_restaurant = ""
 restaurant_about_menu = []
+restaurant_dishes_menu = []
 order = []
 
 # Очередь заказов и время ожидания
 orders_queue = []
-waiting_time = 0
+waiting_time = 10
 
 def main_menu_markup():
     markup = types.ReplyKeyboardMarkup(row_width=3)
@@ -30,11 +31,19 @@ def main_menu_markup():
     return markup
 
 def dishes_menu_markup(markup, restaurant):
-    #markup = types.ReplyKeyboardMarkup(row_width=3)
+    global restaurant_dishes_menu
+    restaurant_dishes_menu.clear()
     menu = restaurants.get(restaurant)
-    buttons = [types.KeyboardButton(text) for text in menu]
-    markup.add(*buttons)
+    for text in menu:
+        markup.add(types.KeyboardButton(text))
+        restaurant_dishes_menu.append(text)
     return markup
+
+@bot.message_handler(func=lambda message: message.text in restaurant_dishes_menu)
+def handle_dishes(message):
+    markup = types.ReplyKeyboardMarkup(row_width=3)
+    order.append(message.text)
+    bot.send_message(message.chat.id, message.text, reply_markup=markup)
 
 @bot.message_handler(commands=['start'])
 def handle_start(message):
@@ -65,6 +74,7 @@ def handle_dishes(message):
 
 @bot.message_handler(func=lambda message: message.text in restaurants.keys())
 def handle_menu(message):
+    global choose_restaurant  # Добавляем это, чтобы обновлять глобальную переменную
     markup = types.ReplyKeyboardMarkup(row_width=2)
     markup.add(types.KeyboardButton('Главное меню'))
     markup.add(types.KeyboardButton('Рестораны'))
@@ -85,7 +95,7 @@ def handle_restaurant_info(message):
     comma_index = message.text.find('.')
     restaurant = "Ресторан не выбран"
     info = "Невозможно предоставить информацию"
-    if comma_index != -1:  # Если запятая найдена
+    if comma_index != -1:  # Если точка найдена
         restaurant = message.text[:comma_index]
         info = message.text[comma_index+2:]
     markup = types.ReplyKeyboardMarkup(row_width=2)
@@ -113,11 +123,15 @@ def handle_orders(message):
     markup.add(types.KeyboardButton('Главное меню'))
     if orders_queue:
         bot.send_message(message.chat.id, "Очередь заказов:")
-        for order in orders_queue:
-            bot.send_message(message.chat.id, order, reply_markup=markup)
+        for ord in orders_queue:
+            bot.send_message(message.chat.id, ord, reply_markup=markup)
         bot.send_message(message.chat.id, f"Время ожидания: {waiting_time} мин", reply_markup=markup)
     else:
         bot.send_message(message.chat.id, "У вас нет заказа.", reply_markup=markup)
+@bot.message_handler(func=lambda message: message.text == 'Сделать заказ')
+def handle_make_order(message):
+    global order
+    orders_queue.append(order)
 
 @bot.message_handler(func=lambda message: message.text == 'Настройки')
 def handle_settings(message):

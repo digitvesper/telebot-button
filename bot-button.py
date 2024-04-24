@@ -14,14 +14,16 @@ restaurants = {
     "Ресторан 2": ["Пицца", "Суши", "Стейк", "Паста"],
     "Ресторан 3": ["Бургер", "Шаурма", "Картошка фри", "Сэндвич"]
 }
+restaurant_details = {"Описание", "Отзывы", "Рейтинг", "Блюда", "Галерея" }
+choose_restaurant = ""
 
 # Очередь заказов и время ожидания
 orders_queue = []
 waiting_time = 0
 
 def main_menu_markup():
-    markup = types.ReplyKeyboardMarkup(row_width=2)
-    buttons = [types.KeyboardButton(text) for text in ['Блюда', 'Рестораны', 'Заказы', 'Настройки']]
+    markup = types.ReplyKeyboardMarkup(row_width=3)
+    buttons = [types.KeyboardButton(text) for text in ['Рестораны', 'Заказы', 'Настройки']]
     markup.add(*buttons)
     return markup
 
@@ -35,11 +37,13 @@ def handle_main_menu(message):
 
 @bot.message_handler(func=lambda message: message.text == 'Рестораны')
 def handle_restaurants(message):
-    markup = types.ReplyKeyboardMarkup(row_width=1)
+    markup = types.ReplyKeyboardMarkup(row_width=2)
     markup.add(types.KeyboardButton('Главное меню'))
-    bot.send_message(message.chat.id, "Список ресторанов:", reply_markup=markup)
     for restaurant in restaurants:
-        bot.send_message(message.chat.id, restaurant, reply_markup=markup)
+        item_btn = types.KeyboardButton(restaurant)
+        markup.add(item_btn)
+    bot.send_message(message.chat.id, "Выберите ресторан:", reply_markup=markup)
+
 
 @bot.message_handler(func=lambda message: message.text == 'Блюда')
 def handle_dishes(message):
@@ -52,16 +56,21 @@ def handle_dishes(message):
 
 @bot.message_handler(func=lambda message: message.text in restaurants.keys())
 def handle_menu(message):
-    markup = types.ReplyKeyboardMarkup(row_width=1)
+    markup = types.ReplyKeyboardMarkup(row_width=2)
     markup.add(types.KeyboardButton('Главное меню'))
+    markup.add(types.KeyboardButton('Рестораны'))
     restaurant = message.text
     menu = restaurants.get(restaurant)
-    menu_text = f"Меню ресторана {restaurant}:\n" + '\n'.join(menu)
+    choose_restaurant = message.text
+    for details in restaurant_details:
+        item_btn = types.KeyboardButton(choose_restaurant+'. '+details)
+        markup.add(item_btn)
+    menu_text = f"Вы выбрали {restaurant}.\nВыберите информацию о ресторане\n" # + '\n'.join(menu)
     bot.send_message(message.chat.id, menu_text, reply_markup=markup)
 
 @bot.message_handler(func=lambda message: message.text == 'Заказы')
 def handle_orders(message):
-    markup = types.ReplyKeyboardMarkup(row_width=1)
+    markup = types.ReplyKeyboardMarkup(row_width=2)
     markup.add(types.KeyboardButton('Главное меню'))
     if orders_queue:
         bot.send_message(message.chat.id, "Очередь заказов:")
@@ -69,11 +78,11 @@ def handle_orders(message):
             bot.send_message(message.chat.id, order, reply_markup=markup)
         bot.send_message(message.chat.id, f"Время ожидания: {waiting_time} мин", reply_markup=markup)
     else:
-        bot.send_message(message.chat.id, "Очередь заказов пуста", reply_markup=markup)
+        bot.send_message(message.chat.id, "У вас нет заказа.", reply_markup=markup)
 
 @bot.message_handler(func=lambda message: message.text == 'Настройки')
 def handle_settings(message):
-    markup = types.ReplyKeyboardMarkup(row_width=1)
+    markup = types.ReplyKeyboardMarkup(row_width=2)
     markup.add(types.KeyboardButton('Главное меню'))
     bot.send_message(message.chat.id, "Настройки пока недоступны", reply_markup=markup)
 

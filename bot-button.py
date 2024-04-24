@@ -17,6 +17,7 @@ restaurants = {
 restaurant_details = {"Описание", "Отзывы", "Рейтинг", "Блюда", "Галерея" }
 choose_restaurant = ""
 restaurant_about_menu = []
+order = []
 
 # Очередь заказов и время ожидания
 orders_queue = []
@@ -25,6 +26,13 @@ waiting_time = 0
 def main_menu_markup():
     markup = types.ReplyKeyboardMarkup(row_width=3)
     buttons = [types.KeyboardButton(text) for text in ['Рестораны', 'Заказы', 'Настройки']]
+    markup.add(*buttons)
+    return markup
+
+def dishes_menu_markup(markup, restaurant):
+    #markup = types.ReplyKeyboardMarkup(row_width=3)
+    menu = restaurants.get(restaurant)
+    buttons = [types.KeyboardButton(text) for text in menu]
     markup.add(*buttons)
     return markup
 
@@ -92,7 +100,9 @@ def handle_restaurant_info(message):
     elif info == "Галерея":
         bot.send_message(message.chat.id, "Выводим галерею ресторана")
     elif info == "Блюда":
+        markup = dishes_menu_markup(markup, restaurant)
         bot.send_message(message.chat.id, "Выводим меню с блюдами")
+        markup.add(types.KeyboardButton('Сделать заказ'))
     menu_text = info
     bot.send_message(message.chat.id, restaurant)
     bot.send_message(message.chat.id, menu_text, reply_markup=markup)

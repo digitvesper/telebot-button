@@ -16,6 +16,7 @@ restaurants = {
 }
 restaurant_details = {"Описание", "Отзывы", "Рейтинг", "Блюда", "Галерея" }
 choose_restaurant = ""
+restaurant_about_menu = []
 
 # Очередь заказов и время ожидания
 orders_queue = []
@@ -62,10 +63,38 @@ def handle_menu(message):
     restaurant = message.text
     menu = restaurants.get(restaurant)
     choose_restaurant = message.text
+    restaurant_about_menu.clear()
     for details in restaurant_details:
-        item_btn = types.KeyboardButton(choose_restaurant+'. '+details)
+        menu_name = choose_restaurant+'. '+details
+        restaurant_about_menu.append(menu_name)
+        item_btn = types.KeyboardButton(menu_name)
         markup.add(item_btn)
     menu_text = f"Вы выбрали {restaurant}.\nВыберите информацию о ресторане\n" # + '\n'.join(menu)
+    bot.send_message(message.chat.id, menu_text, reply_markup=markup)
+
+@bot.message_handler(func=lambda message: message.text in restaurant_about_menu)
+def handle_restaurant_info(message):
+    comma_index = message.text.find('.')
+    restaurant = "Ресторан не выбран"
+    info = "Невозможно предоставить информацию"
+    if comma_index != -1:  # Если запятая найдена
+        restaurant = message.text[:comma_index]
+        info = message.text[comma_index+2:]
+    markup = types.ReplyKeyboardMarkup(row_width=2)
+    markup.add(types.KeyboardButton('Главное меню'))
+    markup.add(types.KeyboardButton('Рестораны'))
+    if info == "Описание":
+        bot.send_message(message.chat.id, "Выводим описание")
+    elif info == "Отзывы":
+        bot.send_message(message.chat.id, "Выводим 5 популярных отзыва")
+    elif info == "Рейтинг":
+        bot.send_message(message.chat.id, "Выводим рейтинг ресторана")
+    elif info == "Галерея":
+        bot.send_message(message.chat.id, "Выводим галерею ресторана")
+    elif info == "Блюда":
+        bot.send_message(message.chat.id, "Выводим меню с блюдами")
+    menu_text = info
+    bot.send_message(message.chat.id, restaurant)
     bot.send_message(message.chat.id, menu_text, reply_markup=markup)
 
 @bot.message_handler(func=lambda message: message.text == 'Заказы')
